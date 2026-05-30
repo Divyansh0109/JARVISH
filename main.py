@@ -72,9 +72,7 @@ print("=" * 50)
 asyncio.run(
     speak("System online. How can I help you?")
 )
-asyncio.run(
-    speak("how are you doing today?")
-)
+
 # TAKE COMMAND
 command = listen()
 
@@ -87,6 +85,15 @@ if "youtube" in command:
     )
 
     webbrowser.open("https://youtube.com")
+elif "play" in command:
+
+    song = command.replace("play", "")
+
+    asyncio.run(
+        speak(f"Playing {song}")
+    )
+
+    pywhatkit.playonyt(song)    
 
 elif "antigravity" in command:
     asyncio.run(
@@ -94,6 +101,16 @@ elif "antigravity" in command:
     )
 
     os.startfile(r"C:\Users\DELL\AppData\Local\Programs\Antigravity IDE\Antigravity IDE.exe")
+
+elif "search" in command:
+
+    search_query = command.replace("search", "")
+
+    asyncio.run(
+        speak(f"Searching for {search_query}")
+    )
+
+    pywhatkit.search(search_query)
 
 elif "vs code" in command:
     asyncio.run(
