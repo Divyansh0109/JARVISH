@@ -1,48 +1,74 @@
-import speech_recognition as sr
-import asyncio
-import edge_tts
-import pygame
-import pywhatkit
-import subprocess
-import os
-import webbrowser
-import datetime
 
+
+import speech_recognition as sr      # Speech to text
+import asyncio                       # Async support for edge_tts
+import edge_tts                      # AI voice generation
+import pygame                        # Audio playback
+import pywhatkit                     # Google search & YouTube automation
+import os                            # OS operations
+import webbrowser                    # Open websites
+import datetime                      # Current date & time
+
+# Create speech recognizer object
 recognizer = sr.Recognizer()
 
-# SPEAK FUNCTION
-async def speak(text):
 
+# TEXT TO SPEECH FUNCTION
+
+
+async def speak(text):
+    
+
+    # Show Jarvis response in terminal
     print(f"\n[JARVIS]: {text}")
 
+    # Generate AI voice
     communicate = edge_tts.Communicate(
         text=text,
         voice="en-US-GuyNeural"
     )
 
+    # Save generated voice as mp3
     await communicate.save("voice.mp3")
 
+    # Initialize audio engine
     pygame.mixer.init()
+
+    # Load generated audio
     pygame.mixer.music.load("voice.mp3")
+
+    # Play audio
     pygame.mixer.music.play()
 
+    # Wait until audio finishes
     while pygame.mixer.music.get_busy():
         continue
 
+    # Stop audio engine
     pygame.mixer.quit()
 
+    # Delete temporary audio file
     os.remove("voice.mp3")
 
 
-# LISTEN FUNCTION
+
+# SPEECH RECOGNITION FUNCTION
+
+
 def listen():
+    
 
     with sr.Microphone() as source:
 
         print("\n[STATUS]: Listening...")
 
-        recognizer.adjust_for_ambient_noise(source, duration=1)
+        # Adjust for background noise
+        recognizer.adjust_for_ambient_noise(
+            source,
+            duration=1
+        )
 
+        # Listen to user
         audio = recognizer.listen(
             source,
             timeout=5,
@@ -53,6 +79,7 @@ def listen():
 
         try:
 
+            # Convert speech to text
             text = recognizer.recognize_google(audio)
 
             print(f"\n[YOU]: {text}")
@@ -61,98 +88,193 @@ def listen():
 
         except:
 
+            # Return empty string if recognition fails
             return ""
 
 
-# STARTUP
+
+# STARTUP SCREEN
+
+
 print("=" * 50)
-print("      JARVIS MARK-II")
+print("         JARVIS MARK-IV")
 print("=" * 50)
 
+# Startup greeting
 asyncio.run(
     speak("System online. How can I help you?")
 )
 
-# TAKE COMMAND
-command = listen()
+# ASSISTANT STATE
 
 
-# COMMANDS
-if "youtube" in command:
-
-    asyncio.run(
-        speak("Opening YouTube")
-    )
-
-    webbrowser.open("https://youtube.com")
-elif "play" in command:
-
-    song = command.replace("play", "")
-
-    asyncio.run(
-        speak(f"Playing {song}")
-    )
-
-    pywhatkit.playonyt(song)    
-
-elif "antigravity" in command:
-    asyncio.run(
-        speak("Opening Antigravity")
-    )
-
-    os.startfile(r"C:\Users\DELL\AppData\Local\Programs\Antigravity IDE\Antigravity IDE.exe")
-
-elif "search" in command:
-
-    search_query = command.replace("search", "")
-
-    asyncio.run(
-        speak(f"Searching for {search_query}")
-    )
-
-    pywhatkit.search(search_query)
-
-elif "vs code" in command:
-    asyncio.run(
-        speak("Opening Visual Studio Code")
-    )
-
-    os.startfile(r"C:\Users\DELL\AppData\Local\Programs\Microsoft VS Code\Code.exe")
+# True = Jarvis listens
+# False = Jarvis sleeps
+jarvis_awake = True
 
 
-elif "google" in command:
 
-    asyncio.run(
-        speak("Opening Google")
-    )
-
-    webbrowser.open("https://google.com")
-elif "insta" in command:
-
-    asyncio.run(
-        speak("Opening Instagram")
-    )
-
-    webbrowser.open("https://instagram.com")
-
-elif "time" in command:
-
-    time = datetime.datetime.now().strftime("%I:%M %p")
-
-    asyncio.run(
-        speak(f"The current time is {time}")
-    )
+# MAIN LOOP
 
 
-elif "hello" in command:
+while True:
 
-    asyncio.run(
-        speak("Hello Divyansh")
-    )
+    # Listen for command
+    command = listen()
+
+    # Ignore empty input
+    if command == "":
+        continue
+
+     
+    # EXIT COMMAND
+     
+    if "exit" in command:
+
+        asyncio.run(
+            speak("Goodbye Divyansh")
+        )
+
+        break
+
+    # SLEEP MODE
+    
+    elif "go to sleep" in command:
+
+        jarvis_awake = False
+
+        asyncio.run(
+            speak("Entering sleep mode")
+        )
+
+        continue
+
+     
+    # WAKE MODE
+     
+    elif "wake up" in command:
+
+        jarvis_awake = True
+
+        asyncio.run(
+            speak("I am awake now")
+        )
+
+        continue
+
+    # If sleeping, ignore all commands
+    if not jarvis_awake:
+        continue
+
+     
+    # OPEN YOUTUBE
+     
+    elif "youtube" in command:
+
+        asyncio.run(
+            speak("Opening YouTube")
+        )
+
+        webbrowser.open("https://youtube.com")
+
+     
+    # PLAY SONG ON YOUTUBE
+     
+    elif "play" in command:
+
+        song = command.replace(
+            "play",
+            ""
+        ).strip()
+
+        asyncio.run(
+            speak(f"Playing {song}")
+        )
+
+        pywhatkit.playonyt(song)
 
 
-else:
+     
+    # GOOGLE SEARCH
+     
+    elif "search" in command:
 
-    asyncio.run(
-        speak("Command not recognized")
-    )
+        search_query = command.replace(
+            "search",
+            ""
+        ).strip()
+
+        asyncio.run(
+            speak(f"Searching for {search_query}")
+        )
+
+        pywhatkit.search(search_query)
+
+     
+    # OPEN VS CODE
+     
+    elif "vs code" in command:
+
+        asyncio.run(
+            speak("Opening Visual Studio Code")
+        )
+
+        os.startfile(
+            r"C:\Users\DELL\AppData\Local\Programs\Microsoft VS Code\Code.exe"
+        )
+
+     
+    # OPEN GOOGLE
+     
+    elif "google" in command:
+
+        asyncio.run(
+            speak("Opening Google")
+        )
+
+        webbrowser.open("https://google.com")
+
+     
+    # OPEN INSTAGRAM
+     
+    elif "insta" in command:
+
+        asyncio.run(
+            speak("Opening Instagram")
+        )
+
+        webbrowser.open("https://instagram.com")
+
+     
+    # CURRENT TIME
+     
+    elif "time" in command:
+
+        current_time = datetime.datetime.now().strftime(
+            "%I:%M %p"
+        )
+
+        asyncio.run(
+            speak(
+                f"The current time is {current_time}"
+            )
+        )
+
+     
+    # GREETING
+     
+    elif "hello" in command:
+
+        asyncio.run(
+            speak("Hello Divyansh")
+        )
+
+     
+    # UNKNOWN COMMAND
+     
+    else:
+
+        asyncio.run(
+            speak("Command not recognized")
+        )
+
