@@ -8,6 +8,8 @@ import pywhatkit                     # Google search & YouTube automation
 import os                            # OS operations
 import webbrowser                    # Open websites
 import datetime                      # Current date & time
+import psutil                        # System monitoring
+import requests                       # API requests    
 
 # Create speech recognizer object
 recognizer = sr.Recognizer()
@@ -112,10 +114,7 @@ asyncio.run(
 # False = Jarvis sleeps
 jarvis_awake = True
 
-
-
 # MAIN LOOP
-
 
 while True:
 
@@ -166,9 +165,19 @@ while True:
     if not jarvis_awake:
         continue
 
+    # BATTERY STATUS
+    
+    elif "battery" in command:
+
+     battery = psutil.sensors_battery()
+     percent = battery.percent
+     asyncio.run(
+        speak(
+            f"Your battery is at {percent} percent"
+        ))
      
     # OPEN YOUTUBE
-     
+    
     elif "youtube" in command:
 
         asyncio.run(
@@ -176,8 +185,7 @@ while True:
         )
 
         webbrowser.open("https://youtube.com")
-
-     
+ 
     # PLAY SONG ON YOUTUBE
      
     elif "play" in command:
@@ -193,8 +201,6 @@ while True:
 
         pywhatkit.playonyt(song)
 
-
-     
     # GOOGLE SEARCH
      
     elif "search" in command:
@@ -210,8 +216,7 @@ while True:
 
         pywhatkit.search(search_query)
 
-     
-    # OPEN VS CODE
+     # OPEN VS CODE
      
     elif "vs code" in command:
 
@@ -268,10 +273,68 @@ while True:
         asyncio.run(
             speak("Hello Divyansh")
         )
+    
+    elif "system status" in command:
 
-     
+        cpu = psutil.cpu_percent()
+
+        ram = psutil.virtual_memory().percent
+
+        battery = psutil.sensors_battery()
+
+        battery_percent = battery.percent
+
+        asyncio.run(
+         speak(
+            f"""
+            CPU usage is {cpu} percent.
+            RAM usage is {ram} percent.
+            Battery is {battery_percent} percent.
+            """
+        )
+    )
+
+    #Wheather information
+    elif "weather in" in command:
+
+        city = command.replace(
+        "weather in",
+        ""
+            ).strip()
+
+        response = requests.get(
+        f"https://wttr.in/{city}?format=3"
+        )
+
+        weather = response.text
+
+        asyncio.run(
+        speak(weather)
+        )  
+    
+    # IP ADDRESS
+
+    elif "ip address" in command:
+        try:
+            response = requests.get(
+            "https://api.ipify.org?format=json"
+             )
+            ip = response.json()["ip"]
+
+            asyncio.run(
+            speak(f"Your IP address is {ip}")
+         )
+
+        except:
+
+            asyncio.run(
+                     speak(
+                "Unable to fetch IP address"
+                 )
+             )
+            
+
     # UNKNOWN COMMAND
-     
     else:
 
         asyncio.run(
