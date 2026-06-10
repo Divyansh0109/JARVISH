@@ -4,16 +4,18 @@ import speech_recognition as sr      # Speech to text
 import asyncio                       # Async support for edge_tts
 import edge_tts                      # AI voice generation
 import pygame                        # Audio playback
-import pywhatkit                     # Google search & YouTube automation
+#import pywhatkit                     # Google search & YouTube automation
 import os                            # OS operations
 import webbrowser                    # Open websites
 import datetime                      # Current date & time
 import psutil                        # System monitoring
 import requests                       # API requests    
+import json                           # JSON handling
+from AI import ask_ai          # AI response generation 
 
 # Create speech recognizer object
 recognizer = sr.Recognizer()
-
+WAKE_WORD = ["jarvis","hey jarvis","daddy's home","hey buddy"]  # Wake word to activate assistant
 
 # TEXT TO SPEECH FUNCTION
 
@@ -52,36 +54,55 @@ async def speak(text):
     # Delete temporary audio file
     os.remove("voice.mp3")
 
+def wait_for_wake_word():
 
+    while True:
 
+        text = listen()
+
+        if not text:
+            continue
+
+        for word in WAKE_WORD:
+
+            if word in text:
+
+                command = text.replace(
+                    word,
+                    ""
+                ).strip()
+
+                return command
 # SPEECH RECOGNITION FUNCTION
 
 
 def listen():
-    
 
     with sr.Microphone() as source:
 
         print("\n[STATUS]: Listening...")
 
-        # Adjust for background noise
         recognizer.adjust_for_ambient_noise(
             source,
             duration=1
         )
 
-        # Listen to user
-        audio = recognizer.listen(
-            source,
-            timeout=5,
-            phrase_time_limit=8
-        )
+        try:
+
+            audio = recognizer.listen(
+                source,
+                timeout=5,
+                phrase_time_limit=8
+            )
+
+        except sr.WaitTimeoutError:
+
+            return ""
 
         print("[STATUS]: Recognizing...")
 
         try:
 
-            # Convert speech to text
             text = recognizer.recognize_google(audio)
 
             print(f"\n[YOU]: {text}")
@@ -90,16 +111,26 @@ def listen():
 
         except:
 
-            # Return empty string if recognition fails
             return ""
 
+def load_memory():
+    try:
+        with open("memory.json", "r") as file:
+            return json.load(file)
+    
+    except:
+        return {}   
+
+def save_memory(memory):
+    with open("memory.json", "w") as file:
+        json.dump(memory, file, indent=4)
 
 
 # STARTUP SCREEN
 
 
 print("=" * 50)
-print("         JARVIS MARK-IV")
+print("         JARVIS ACTIVATED")
 print("=" * 50)
 
 # Startup greeting
@@ -118,10 +149,23 @@ jarvis_awake = True
 
 while True:
 
-    # Listen for command
-    command = listen()
+    print(
+        "\n[STATUS]: Waiting for wake word..."
+    )
 
-    # Ignore empty input
+    command = wait_for_wake_word()
+
+    # User only said wake word
+    if command == "":
+
+        asyncio.run(
+            speak(
+                "Yes Divyansh?"
+            )
+        )
+
+        command = listen()
+
     if command == "":
         continue
 
@@ -228,7 +272,39 @@ while True:
             r"C:\Users\DELL\AppData\Local\Programs\Microsoft VS Code\Code.exe"
         )
 
-     
+    #remember information
+    elif "remember" in command:
+
+        data = command.replace(
+        "remember",
+        ""
+        ).strip()
+
+        if " is " in data:
+
+            key, value = data.split( " is ", 1)
+            memory = load_memory()
+            memory[key] = value
+            save_memory(memory)
+            asyncio.run(
+            speak( f"I will remember that {key} is {value}"))
+    
+    #recall information
+    elif "what is" in command:
+        key = command.replace("what is my","" ).strip()
+        memory = load_memory()
+
+        if key in memory:
+
+            asyncio.run(
+                speak(f"Your {key} is {memory[key]}") )
+
+        else:
+            print("\n[STATUS]: Asking AI...")
+            answer = ask_ai(command)
+            asyncio.run(
+                speak(answer) )
+
     # OPEN GOOGLE
      
     elif "google" in command:
@@ -265,8 +341,7 @@ while True:
             )
         )
 
-     
-    # GREETING
+      # GREETING
      
     elif "hello" in command:
 
@@ -274,6 +349,8 @@ while True:
             speak("Hello Divyansh")
         )
     
+    #system status
+
     elif "system status" in command:
 
         cpu = psutil.cpu_percent()
@@ -336,8 +413,8 @@ while True:
 
     # UNKNOWN COMMAND
     else:
-
-        asyncio.run(
-            speak("Command not recognized")
-        )
+        print("\n[STATUS]: Thinking...")
+        answer = ask_ai(command)
+        print(f"\n[AI]: {answer}")
+        asyncio.run(speak(answer))
 
